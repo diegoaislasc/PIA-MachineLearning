@@ -20,12 +20,35 @@ Este dataset de telemetría deportiva pasó por distintas fases académicas para
 
 2. **Aplicación para el PIA de Machine Learning (Propósito actual):**
    Gracias a que el dataset heredado cuenta con características tabulares de alta dimensionalidad espacial y categórica, resulta el recurso perfecto para aplicar las metodologías centrales de esta materia. Haber superado la etapa de recolección y limpieza nos permite enfocarnos al 100% en:
-   * Construcción de **Modelos Predictivos Avanzados (KNN, Random Forest, SVM)**.
-   * Manejo estratégico del **desbalance de clases** (los goles representan ~10% de los datos).
-   * Análisis de la importancia geométrica de las variables para definir la frontera de decisión no lineal de un *Expected Goal* (xG).
+   * **Modelado Predictivo:** Uso de clasificadores para discernir fronteras no lineales.
+   * **Estrategias de Evaluación:** Manejo estratégico del desbalance de clases (los goles representan ~10% de los datos).
 
-### Variables Clave para el Modelado Predictivo
-* `shotType`: Nuestra variable a predecir. Fue binarizada a `is_goal` (1 para Gol, 0 para fallos, atajadas o bloqueos).
-* `playerCoordinates`: Convertidas desde JSON a variables independientes (`shot_x`, `shot_y`).
-* `distance_to_goal`: Característica de ingeniería calculada de manera euclidiana.
-* `situation` / `bodyPart`: Transformadas vía One-Hot Encoding para su asimilación en algoritmos clasificatorios.
+---
+
+## Metodología y Técnicas de Machine Learning (Fases del Proyecto)
+
+El objetivo central del PIA es determinar la probabilidad de que un tiro se convierta en Gol (xG) basándose estrictamente en su telemetría. Para esto, se implementó un pipeline en las siguientes fases:
+
+1. **Preprocesamiento y Feature Engineering:**
+   * Binarización de la variable objetivo (`shotType` -> `is_goal`).
+   * Cálculo de la distancia euclidiana hacia el centro de la portería (`distance_to_goal`).
+   * One-Hot Encoding para las variables categóricas (`situation`, `bodyPart`).
+   * Estandarización de las variables numéricas mediante `StandardScaler` para algoritmos sensibles a distancias.
+
+2. **K-Nearest Neighbors (KNN) - El Modelo Base (Baseline):**
+   Se implementó KNN para probar la agrupación de datos por cercanía geométrica. Aunque arrojó un Accuracy del 89%, su *Recall* para detectar goles fue de solo 19%, evidenciando la trampa de la exactitud global en datasets desbalanceados.
+
+3. **Random Forest Classifier - Análisis de Importancia:**
+   Entrenado con `class_weight='balanced'`. Random Forest demostró que variables como la *Distancia a la portería* y *Coordenada X/Y* dominan abrumadoramente el peso predictivo sobre la *Parte del cuerpo* o *Situación de juego*. Sin embargo, el modelo sufrió de "overfitting" hacia la clase mayoritaria (no goles).
+
+4. **Support Vector Machine (SVM) - El Modelo Definitivo:**
+   Implementado con un Kernel RBF (Radial Basis Function) y `class_weight='balanced'`. Al ser la probabilidad de un gol una frontera de decisión sumamente curva e irregular en la cancha, SVM logró mapear esa frontera no lineal con éxito, **aumentando el Recall de goles de un 19% (KNN) a un 66% (SVM)**.
+
+---
+
+## Resultados y Conclusiones Técnicas
+
+El hallazgo más importante del proyecto demuestra que **predecir goles es un problema geométrico no lineal**, no un simple problema de árboles lógicos. Mientras los modelos tradicionales (KNN y Random Forest) priorizaron un Accuracy artificial alto ignorando los goles verdaderos, el algoritmo **SVM (Kernel RBF)** sacrificó su Accuracy general para convertirse en un detector mucho más sensible a las zonas reales de peligro en la cancha.
+
+> **NOTA IMPORTANTE:** 
+> Para conocer el detalle técnico profundo, la implementación paso a paso del código, las gráficas generadas (Feature Importance, Matrices de Confusión) y el razonamiento funcional exhaustivo de cada hallazgo, **es obligatorio revisar el archivo interactivo `pia_machine_learning.ipynb`**. Ese documento sirve como el reporte maestro donde se fusionan el código y la teoría.
